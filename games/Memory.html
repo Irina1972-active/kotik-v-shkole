@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animal Memory — 2 Players</title>
+    <!-- Added Cartoon Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            /* Bright, sunny background */
+            background: linear-gradient(135deg, #00C9FF 0%, #92FE9D 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 25px;
+        }
+
+        h1 {
+            /* Cartoon Font */
+            font-family: 'Fredoka One', cursive;
+            font-size: 3.5rem;
+            margin-bottom: 10px;
+            color: #FF4081; /* Hot Pink */
+            text-transform: uppercase;
+            /* Cartoon Outline Effect */
+            -webkit-text-stroke: 2px #ffffff;
+            text-shadow: 4px 4px 0px #333;
+            letter-spacing: 2px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #006064;
+            background: rgba(255, 255, 255, 0.8);
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 50px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .score-board {
+            display: flex;
+            justify-content: space-around;
+            background: white;
+            border-radius: 25px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            border: 4px solid #FFEB3B; /* Yellow border */
+        }
+
+        .player-score {
+            text-align: center;
+            padding: 15px 25px;
+            border-radius: 20px;
+            transition: all 0.3s;
+            color: white; /* Default text color for gradients */
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        /* Player 1 Bright Gradient */
+        #player1Score {
+            background: linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 100%);
+            border: 3px solid #fff;
+        }
+
+        /* Player 2 Bright Gradient */
+        #player2Score {
+            background: linear-gradient(135deg, #4ECDC4 0%, #55E6C1 100%);
+            border: 3px solid #fff;
+        }
+
+        .player-score.active {
+            transform: scale(1.15);
+            box-shadow: 0 0 25px #FFE66D;
+            border: 4px solid #FFE66D; /* Yellow border for active turn */
+            z-index: 10;
+        }
+
+        .player-label {
+            font-size: 1rem;
+            font-weight: 800;
+            color: white; /* Changed to white for gradient background */
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .player-name {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: white; /* Changed to white */
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .score-value {
+            font-family: 'Fredoka One', cursive;
+            font-size: 2.5rem;
+            color: white; /* Changed to white */
+            text-shadow: 2px 2px 0px rgba(0,0,0,0.2);
+        }
+
+        .current-turn {
+            text-align: center;
+            padding: 15px 25px;
+            background: #00BCD4;
+            border-radius: 20px;
+            color: white;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transform: rotate(-2deg);
+            border: 3px solid white;
+        }
+
+        .turn-label {
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .turn-indicator {
+            font-family: 'Fredoka One', cursive;
+            font-size: 1.4rem;
+        }
+
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+            perspective: 1000px;
+        }
+
+        .card {
+            aspect-ratio: 1;
+            position: relative;
+            cursor: pointer;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+        }
+
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card.matched {
+            animation: matchPulse 0.6s ease;
+        }
+
+        @keyframes matchPulse {
+            0%, 100% { transform: rotateY(180deg) scale(1); }
+            50% { transform: rotateY(180deg) scale(1.15); }
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            overflow: hidden;
+            border: 3px solid white;
+        }
+
+        .card-back {
+            /* Bright pattern for card back */
+            background: repeating-linear-gradient(
+                45deg,
+                #FF6B6B,
+                #FF6B6B 10px,
+                #FF8787 10px,
+                #FF8787 20px
+            );
+            color: white;
+            font-size: 2rem;
+        }
+
+        .card-front {
+            background: white;
+            transform: rotateY(180deg);
+        }
+
+        .animal-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 15px 35px;
+            border: none;
+            border-radius: 50px;
+            font-family: 'Fredoka One', cursive;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 6px 0 rgba(0,0,0,0.2);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            top: 0;
+        }
+
+        .btn:active {
+            top: 6px;
+            box-shadow: 0 0 0 rgba(0,0,0,0.2);
+        }
+
+        .btn-primary {
+            background: #FF4081;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #00BCD4;
+            color: white;
+        }
+
+        .btn-accent {
+            background: #FFEB3B;
+            color: #333;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 30px;
+            padding: 40px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            animation: modalPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            border: 5px solid #FF4081;
+        }
+
+        @keyframes modalPop {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .modal h2 {
+            font-family: 'Fredoka One', cursive;
+            color: #FF4081;
+            margin-bottom: 20px;
+            font-size: 2.5rem;
+            -webkit-text-stroke: 1px white;
+        }
+
+        .quiz-question {
+            font-size: 1.8rem;
+            margin-bottom: 30px;
+            color: #333;
+            font-weight: bold;
+            font-family: 'Fredoka One', cursive;
+        }
+
+        .quiz-options {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .quiz-btn {
+            padding: 15px 40px;
+            border: 4px solid #00BCD4;
+            background: white;
+            color: #00BCD4;
+            border-radius: 50px;
+            font-family: 'Fredoka One', cursive;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 5px 0 #008BA3;
+            top: 0;
+            position: relative;
+        }
+
+        .quiz-btn:active {
+            top: 5px;
+            box-shadow: none;
+        }
+
+        .quiz-btn:hover {
+            background: #E0F7FA;
+            transform: scale(1.05);
+        }
+
+        .quiz-btn.correct {
+            background: #69F0AE;
+            border-color: #00E676;
+            color: white;
+            box-shadow: 0 5px 0 #00C853;
+        }
+
+        .quiz-btn.wrong {
+            background: #FF5252;
+            border-color: #FF1744;
+            color: white;
+            box-shadow: 0 5px 0 #D50000;
+        }
+
+        .help-content {
+            text-align: left;
+            line-height: 1.8;
+            color: #555;
+            font-size: 1.1rem;
+        }
+
+        .help-content h3 {
+            color: #00BCD4;
+            font-family: 'Fredoka One', cursive;
+            margin: 15px 0 10px 0;
+            font-size: 1.4rem;
+        }
+
+        .help-content ul {
+            margin-left: 20px;
+        }
+
+        .close-modal {
+            margin-top: 25px;
+            padding: 12px 40px;
+            background: #FF4081;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-family: 'Fredoka One', cursive;
+            font-size: 1.2rem;
+            box-shadow: 0 5px 0 #C2185B;
+            transition: all 0.2s;
+        }
+        
+        .close-modal:active {
+            transform: translateY(5px);
+            box-shadow: none;
+        }
+
+        .winner-modal h2 {
+            color: #FFEB3B;
+            text-shadow: 3px 3px 0 #333;
+            -webkit-text-stroke: 2px #FF4081;
+        }
+
+        .winner-text {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: #333;
+            font-weight: bold;
+        }
+
+        .final-scores {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            font-size: 1.8rem;
+            font-family: 'Fredoka One', cursive;
+            color: #00BCD4;
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0,0,0,0);
+            border: 0;
+        }
+
+        @media (max-width: 600px) {
+            .game-grid {
+                gap: 10px;
+            }
+            
+            h1 {
+                font-size: 2.2rem;
+                -webkit-text-stroke: 1px #ffffff;
+            }
+            
+            .score-board {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .card-face {
+                border-radius: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🦁 Animal Memory</h1>
+            <p class="subtitle">Match pairs, answer the quiz to score!</p>
+        </header>
+
+        <div class="score-board" role="region" aria-label="Score Board">
+            <div class="player-score" id="player1Score" aria-live="polite">
+                <div class="player-label">Player 1</div>
+                <div class="player-name">🎮</div>
+                <div class="score-value" id="score1">0</div>
+            </div>
+            
+            <div class="current-turn" aria-live="polite">
+                <div class="turn-label">Current Turn</div>
+                <div class="turn-indicator" id="currentTurn">Player 1</div>
+            </div>
+            
+            <div class="player-score" id="player2Score" aria-live="polite">
+                <div class="player-label">Player 2</div>
+                <div class="player-name">🎯</div>
+                <div class="score-value" id="score2">0</div>
+            </div>
+        </div>
+
+        <div class="game-grid" id="gameGrid" role="grid" aria-label="Memory Game Grid">
+            <!-- Cards generated by JavaScript -->
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-primary" onclick="initGame()">🔄 New Game</button>
+            <button class="btn btn-secondary" onclick="passTurn()">⏭️ Pass Turn</button>
+            <button class="btn btn-accent" onclick="showHelp()">❓ Help</button>
+        </div>
+    </div>
+
+    <!-- Quiz Modal -->
+    <div class="modal-overlay" id="quizModal" role="dialog" aria-modal="true" aria-labelledby="quizTitle">
+        <div class="modal">
+            <h2 id="quizTitle">🎯 Quick Quiz!</h2>
+            <div class="quiz-question" id="quizQuestion"></div>
+            <div class="quiz-options" id="quizOptions">
+                <button class="quiz-btn" onclick="answerQuiz('is')">is</button>
+                <button class="quiz-btn" onclick="answerQuiz('are')">are</button>
+                <button class="quiz-btn" onclick="answerQuiz('am')">am</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div class="modal-overlay" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+        <div class="modal">
+            <h2 id="helpTitle">📖 How to Play</h2>
+            <div class="help-content">
+                <h3>Game Rules:</h3>
+                <ul>
+                    <li>Take turns flipping two cards to find matching animal pairs</li>
+                    <li>When you find a match, answer the grammar quiz</li>
+                    <li><strong>Correct answer:</strong> +1 point and keep your turn</li>
+                    <li><strong>Wrong answer:</strong> No points, turn passes to other player</li>
+                    <li>Player with most points wins!</li>
+                </ul>
+                <h3>Quiz Tips:</h3>
+                <ul>
+                    <li>Use <strong>"is"</strong> for singular (he, she, it, this, that)</li>
+                    <li>Use <strong>"are"</strong> for plural (we, you, they, these, those)</li>
+                    <li>Use <strong>"am"</strong> only with "I"</li>
+                </ul>
+            </div>
+            <button class="close-modal" onclick="closeModal('helpModal')">Got it!</button>
+        </div>
+    </div>
+
+    <!-- Winner Modal -->
+    <div class="modal-overlay" id="winnerModal" role="dialog" aria-modal="true" aria-labelledby="winnerTitle">
+        <div class="modal winner-modal">
+            <h2 id="winnerTitle">🏆 Game Over!</h2>
+            <div class="winner-text" id="winnerText"></div>
+            <div class="final-scores">
+                <div>Player 1: <span id="finalScore1">0</span></div>
+                <div>Player 2: <span id="finalScore2">0</span></div>
+            </div>
+            <button class="close-modal" onclick="initGame()">Play Again</button>
+        </div>
+    </div>
+
+    <div class="sr-only" aria-live="polite" id="gameStatus"></div>
+
+    <script>
+        // Animal data with real photos
+        const animals = [
+            {
+                name: 'cat',
+                img: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=400&h=400&fit=crop'
+            },
+            {
+                name: 'dog',
+                img: 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=400&h=400&fit=crop'
+            },
+            {
+                name: 'bird',
+                img: 'https://images.unsplash.com/photo-1444464666168-49d633b86797?w=400&h=400&fit=crop'
+            },
+            {
+                name: 'fish',
+                img: 'https://images.unsplash.com/photo-1522069169874-c58ec4b76be5?w=400&h=400&fit=crop'
+            },
+            {
+                name: 'turtle',
+                img: 'https://images.unsplash.com/photo-1437622368342-7a3d73a34c8f?w=400&h=400&fit=crop'
+            },
+            {
+                name: 'lion',
+                img: 'https://images.unsplash.com/photo-1614027164847-1b28cfe1df60?w=400&h=400&fit=crop'
+            },
+            {
+                name: 'elephant',
+                img: 'https://images.unsplash.com/photo-1557050543-4d5f4e07ef46?w=400&h=400&fit=crop'
+            },
+            {
+                name: 'monkey',
+                img: 'https://images.unsplash.com/photo-1540573133985-87b6da6d54a9?w=400&h=400&fit=crop'
+            }
+        ];
+
+        // Quiz questions (14 total as requested)
+        const quizQuestions = [
+            { question: "__ this a cat?", answer: "is" },
+            { question: "They __ birds.", answer: "are" },
+            { question: "This __ a turtle.", answer: "is" },
+            { question: "We __ happy.", answer: "are" },
+            { question: "__ those dogs?", answer: "are" },
+            { question: "It __ a fish.", answer: "is" },
+            { question: "I __ playing.", answer: "am" },
+            { question: "The cats __ sleeping.", answer: "are" },
+            { question: "__ she a girl?", answer: "is" },
+            { question: "You __ my friend.", answer: "are" },
+            { question: "He __ tall.", answer: "is" },
+            { question: "The birds __ flying.", answer: "are" },
+            { question: "I __ hungry.", answer: "am" },
+            { question: "__ it a lion?", answer: "is" }
+        ];
+
+        let gameState = {
+            cards: [],
+            flippedCards: [],
+            matchedPairs: 0,
+            currentPlayer: 1,
+            scores: { 1: 0, 2: 0 },
+            isProcessing: false,
+            currentQuiz: null
+        };
+
+        function shuffle(array) {
+            const newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        }
+
+        function initGame() {
+            // Reset game state
+            gameState = {
+                cards: [],
+                flippedCards: [],
+                matchedPairs: 0,
+                currentPlayer: 1,
+                scores: { 1: 0, 2: 0 },
+                isProcessing: false,
+                currentQuiz: null
+            };
+
+            // Create pairs of animals
+            const pairs = [];
+            animals.forEach((animal, index) => {
+                pairs.push({ ...animal, id: `card-${index}-1` });
+                pairs.push({ ...animal, id: `card-${index}-2` });
+            });
+
+            // Shuffle cards
+            gameState.cards = shuffle(pairs);
+            
+            // Render grid
+            renderGrid();
+            updateUI();
+            closeModal('winnerModal');
+            announceToScreenReader("New game started. Player 1's turn.");
+        }
+
+        function renderGrid() {
+            const grid = document.getElementById('gameGrid');
+            grid.innerHTML = '';
+            
+            gameState.cards.forEach((card, index) => {
+                const cardEl = document.createElement('div');
+                cardEl.className = 'card';
+                cardEl.dataset.id = card.id;
+                cardEl.dataset.animal = card.name;
+                cardEl.setAttribute('role', 'button');
+                cardEl.setAttribute('aria-label', `Card ${index + 1}, hidden`);
+                cardEl.setAttribute('tabindex', '0');
+                
+                cardEl.innerHTML = `
+                    <div class="card-face card-back">
+                        <span>❓</span>
+                    </div>
+                    <div class="card-face card-front">
+                        <img src="${card.img}" alt="${card.name}" class="animal-img" loading="lazy">
+                    </div>
+                `;
+                
+                cardEl.addEventListener('click', () => handleCardClick(index));
+                cardEl.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        handleCardClick(index);
+                    }
+                });
+                
+                grid.appendChild(cardEl);
+            });
+        }
+
+        function handleCardClick(index) {
+            if (gameState.isProcessing) return;
+            
+            const card = gameState.cards[index];
+            const cardEl = document.querySelector(`[data-id="${card.id}"]`);
+            
+            // Ignore if already flipped or matched
+            if (cardEl.classList.contains('flipped') || cardEl.classList.contains('matched')) {
+                return;
+            }
+            
+            // Ignore if already 2 cards flipped
+            if (gameState.flippedCards.length >= 2) {
+                return;
+            }
+            
+            // Flip the card
+            cardEl.classList.add('flipped');
+            cardEl.setAttribute('aria-label', `Card showing ${card.name}`);
+            gameState.flippedCards.push({ index, card, element: cardEl });
+            
+            // Check if two cards are flipped
+            if (gameState.flippedCards.length === 2) {
+                checkMatch();
+            }
+        }
+
+        function checkMatch() {
+            gameState.isProcessing = true;
+            const [first, second] = gameState.flippedCards;
+            
+            if (first.card.name === second.card.name) {
+                // Match found!
+                setTimeout(() => {
+                    first.element.classList.add('matched');
+                    second.element.classList.add('matched');
+                    gameState.matchedPairs++;
+                    gameState.flippedCards = [];
+                    
+                    // Show quiz
+                    showQuiz();
+                }, 600);
+            } else {
+                // No match
+                setTimeout(() => {
+                    first.element.classList.remove('flipped');
+                    second.element.classList.remove('flipped');
+                    first.element.setAttribute('aria-label', `Card ${gameState.cards.indexOf(first.card) + 1}, hidden`);
+                    second.element.setAttribute('aria-label', `Card ${gameState.cards.indexOf(second.card) + 1}, hidden`);
+                    gameState.flippedCards = [];
+                    gameState.isProcessing = false;
+                    passTurn();
+                }, 1000);
+            }
+        }
+
+        function showQuiz() {
+            // Select random question
+            const randomQuestion = quizQuestions[Math.floor(Math.random() * quizQuestions.length)];
+            gameState.currentQuiz = randomQuestion;
+            
+            document.getElementById('quizQuestion').textContent = randomQuestion.question;
+            document.getElementById('quizModal').classList.add('active');
+            announceToScreenReader(`Quiz time! ${randomQuestion.question}`);
+        }
+
+        function answerQuiz(answer) {
+            const buttons = document.querySelectorAll('.quiz-btn');
+            const correct = answer === gameState.currentQuiz.answer;
+            
+            // Highlight buttons
+            buttons.forEach(btn => {
+                if (btn.textContent === gameState.currentQuiz.answer) {
+                    btn.classList.add('correct');
+                } else if (btn.textContent === answer && !correct) {
+                    btn.classList.add('wrong');
+                }
+                btn.disabled = true;
+            });
+            
+            if (correct) {
+                // Correct answer
+                gameState.scores[gameState.currentPlayer]++;
+                updateUI();
+                announceToScreenReader(`Correct! Player ${gameState.currentPlayer} gets a point and keeps their turn.`);
+                
+                setTimeout(() => {
+                    closeModal('quizModal');
+                    gameState.isProcessing = false;
+                    
+                    // Check if game is over
+                    if (gameState.matchedPairs === 8) {
+                        endGame();
+                    }
+                }, 1500);
+            } else {
+                // Wrong answer
+                announceToScreenReader(`Wrong answer. Turn passes to Player ${gameState.currentPlayer === 1 ? 2 : 1}.`);
+                
+                setTimeout(() => {
+                    closeModal('quizModal');
+                    passTurn();
+                    gameState.isProcessing = false;
+                    
+                    // Check if game is over
+                    if (gameState.matchedPairs === 8) {
+                        endGame();
+                    }
+                }, 1500);
+            }
+        }
+
+        function passTurn() {
+            gameState.currentPlayer = gameState.currentPlayer === 1 ? 2 : 1;
+            updateUI();
+            announceToScreenReader(`Player ${gameState.currentPlayer}'s turn.`);
+        }
+
+        function updateUI() {
+            document.getElementById('score1').textContent = gameState.scores[1];
+            document.getElementById('score2').textContent = gameState.scores[2];
+            document.getElementById('currentTurn').textContent = `Player ${gameState.currentPlayer}`;
+            
+            // Update active player styling
+            document.getElementById('player1Score').classList.toggle('active', gameState.currentPlayer === 1);
+            document.getElementById('player2Score').classList.toggle('active', gameState.currentPlayer === 2);
+        }
+
+        function endGame() {
+            const score1 = gameState.scores[1];
+            const score2 = gameState.scores[2];
+            
+            let winnerText = '';
+            if (score1 > score2) {
+                winnerText = '🎉 Player 1 Wins!';
+            } else if (score2 > score1) {
+                winnerText = '🎉 Player 2 Wins!';
+            } else {
+                winnerText = "🤝 It's a Tie!";
+            }
+            
+            document.getElementById('winnerText').textContent = winnerText;
+            document.getElementById('finalScore1').textContent = score1;
+            document.getElementById('finalScore2').textContent = score2;
+            document.getElementById('winnerModal').classList.add('active');
+            announceToScreenReader(`Game over! ${winnerText}`);
+        }
+
+        function showHelp() {
+            document.getElementById('helpModal').classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+            // Reset quiz buttons if closing quiz modal
+            if (modalId === 'quizModal') {
+                const buttons = document.querySelectorAll('.quiz-btn');
+                buttons.forEach(btn => {
+                    btn.classList.remove('correct', 'wrong');
+                    btn.disabled = false;
+                });
+            }
+        }
+
+        function announceToScreenReader(message) {
+            const announcer = document.getElementById('gameStatus');
+            announcer.textContent = message;
+            setTimeout(() => {
+                announcer.textContent = '';
+            }, 1000);
+        }
+
+        // Close modals on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal-overlay').forEach(modal => {
+                    modal.classList.remove('active');
+                });
+            }
+        });
+
+        // Close modal on overlay click
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    overlay.classList.remove('active');
+                }
+            });
+        });
+
+        // Initialize game on load
+        initGame();
+    </script>
+</body>
+</html>

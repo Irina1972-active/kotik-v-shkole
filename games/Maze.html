@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DEAL's Maze Escape · comparison race</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Kelvinized&display=swap');
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            user-select: none;
+        }
+
+        body {
+            min-height: 100vh;
+            background: radial-gradient(circle at 30% 40%, #f5b041 0%, #b85e2c 45%, #7f4f24 100%);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* чтобы контент не растягивался на всю высоту */
+            font-family: 'Segoe UI', 'Poppins', 'Arial Rounded', system-ui, sans-serif;
+            padding: 10px;
+            margin: 0;
+            position: relative;
+            overflow-y: auto; /* если игра выше экрана, появится прокрутка */
+        }
+
+        body::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" opacity="0.2"><circle cx="30" cy="170" r="18" fill="%23b85e2c"/><circle cx="170" cy="40" r="24" fill="%23b85e2c"/><path d="M50 80 Q 90 50 130 80 Q 170 110 150 150" stroke="%23d97706" stroke-width="12" fill="none" stroke-linecap="round"/></svg>') repeat;
+            pointer-events: none;
+        }
+
+        .game-container {
+            background: rgba(230, 126, 34, 0.7);
+            backdrop-filter: blur(6px);
+            border-radius: 60px 60px 40px 40px;
+            padding: 20px 25px;
+            box-shadow: 0 20px 0 #9c5115, 0 30px 30px #3d2b10, 0 0 0 6px #f9cb8b, 0 0 0 10px #e07c2c;
+            max-width: 800px; /* ограничиваем максимальную ширину */
+            width: 100%;
+            margin: 0 auto;
+            border: 3px solid #ffb85b;
+            position: relative;
+        }
+
+        .game-container::after {
+            content: "";
+            position: absolute;
+            top: -8px; left: 15%;
+            width: 70%; height: 12px;
+            background: linear-gradient(90deg, #ffe484, #e07c2c, #f1c40f, #e67e22, #f39c12);
+            border-radius: 40px;
+            box-shadow: 0 0 20px #f7b731;
+            border: 2px solid #f3a73d;
+        }
+
+        .game-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+            background: #c46210cc;
+            border-radius: 60px;
+            padding: 3px 20px;
+            border: 4px solid #f6c478;
+            box-shadow: 0 0 0 4px #b85e2c, 0 8px 0 #884A23;
+        }
+
+        .game-title {
+            font-size: 2.5rem; /* уменьшил */
+            font-weight: 900;
+            letter-spacing: 2px;
+            font-family: 'Kelvinized', 'Arial Black', 'Poppins', sans-serif;
+            background: linear-gradient(145deg, #fff5cf, #ffd966, #ffb347);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 4px 4px 0 #b45309, 0 0 20px #ffbc6e, 0 0 40px #ff8700;
+            filter: drop-shadow(0 5px 2px #3b280e);
+            white-space: nowrap;
+            text-align: center;
+        }
+
+        .sub-credit {
+            text-align: center;
+            color: #ffecaa;
+            font-size: 1rem;
+            font-weight: bold;
+            margin-top: -5px;
+            margin-bottom: 15px;
+            text-shadow: 1px 1px 0 #b45309;
+            background: #b85e2c80;
+            display: inline-block;
+            padding: 3px 20px;
+            border-radius: 40px;
+            border: 2px solid #ffb85b;
+            width: auto;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .stats-panel {
+            background: #e7b020cc;
+            backdrop-filter: blur(8px);
+            border-radius: 40px 40px 20px 20px;
+            padding: 8px 15px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px 20px;
+            box-shadow: 0 10px 0 #9c5510, 0 0 0 3px #ffd966, 0 0 20px #ff7b00;
+            border: 2px solid #fdbc40;
+        }
+
+        .timer-steps {
+            display: flex;
+            gap: 20px;
+            font-weight: 800;
+            color: #2e1c0b;
+            font-size: 1.2rem;
+            text-shadow: 1px 1px 0 #f3b33d;
+        }
+
+        .timer-steps span {
+            background: #fcd34d;
+            padding: 6px 15px;
+            border-radius: 40px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 2px solid #b45309;
+            box-shadow: 0 0 0 3px #fbbf24, 0 4px 0 #a7581c;
+        }
+
+        .timer-steps i {
+            font-style: normal;
+            font-size: 1.5rem;
+            filter: drop-shadow(0 0 3px #ff8c00);
+        }
+
+        .keys-progress {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #f1c232;
+            padding: 5px 20px 5px 15px;
+            border-radius: 40px;
+            border: 3px solid #b45309;
+            box-shadow: 0 0 0 3px #fbb13c, 0 5px 0 #a7581c;
+        }
+
+        .keys-label {
+            color: #2c1404;
+            font-weight: 900;
+            font-size: 1.2rem;
+            text-transform: uppercase;
+        }
+
+        .key-icons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .key-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 40% 40%, #ffe484, #e5a41c);
+            transition: 0.2s;
+            border: 2px solid #fff7b0;
+            outline: 2px solid #ff9900;
+            outline-offset: 1px;
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.6), 0 0 15px #ffcc00, 0 0 20px #ff8800;
+        }
+
+        .key-icon.collected {
+            background: radial-gradient(circle at 30% 30%, #ffffb0, #fbbf24);
+            border: 2px solid #c0ffb0;
+            outline: 2px solid #00cc66;
+            box-shadow: 0 0 0 3px rgba(0, 255, 100, 0.5), 0 0 20px #00ffaa;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .action-buttons button {
+            background: linear-gradient(145deg, #e05d0f, #b14204);
+            border: none;
+            color: #fef7e0;
+            font-size: 1.1rem;
+            font-weight: 800;
+            padding: 8px 18px;
+            border-radius: 40px;
+            cursor: pointer;
+            box-shadow: 0 6px 0 #732f03, 0 0 0 2px #fdbc40, 0 0 15px #ffa200;
+            transition: 0.06s linear;
+            text-transform: uppercase;
+            border: 2px solid #ffbc6e;
+        }
+
+        .action-buttons button:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #732f03, 0 0 0 2px #ffbc6e, 0 0 20px orange;
+        }
+
+        .canvas-wrapper {
+            display: flex;
+            justify-content: center;
+            background: #a85b1e;
+            border-radius: 40px;
+            padding: 12px;
+            border: 6px solid #f39c12;
+            box-shadow: 0 0 0 4px #dc843a, 0 15px 0 #754116, 0 30px 20px #3e260e;
+        }
+
+        canvas {
+            width: 100%;
+            height: auto;
+            aspect-ratio: 1/1;
+            display: block;
+            border-radius: 28px;
+            background: #8b5a2b;
+            box-shadow: 0 0 0 4px #e9b35f, 0 15px 20px black;
+            max-width: 500px; /* не даёт canvas стать слишком большим на широких экранах */
+            image-rendering: crisp-edges;
+        }
+
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(30, 15, 5, 0.7);
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: 0.2s;
+        }
+
+        .modal.show {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal-card {
+            background: linear-gradient(145deg, #fedb5f, #fcb045);
+            max-width: 600px;
+            width: 90%;
+            border-radius: 70px 70px 40px 40px;
+            padding: 30px 25px;
+            border: 6px solid #c8821e;
+            box-shadow: 0 15px 0 #9b5e1a, 0 30px 30px #2f1b07, 0 0 0 6px #fde68a;
+            color: #2d1506;
+        }
+
+        .modal-card h2 {
+            color: #4a2002;
+            font-weight: 900;
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 0 #f1c40f, 0 0 15px #ffd966;
+            text-align: center;
+        }
+
+        .question-text {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: #f9e076;
+            padding: 20px 15px;
+            border-radius: 40px;
+            text-align: center;
+            margin: 15px 0;
+            border: 4px solid #b45309;
+            box-shadow: inset 0 -3px 0 #b4701e, 0 0 20px #ffb114;
+            color: #1f0d01;
+            word-break: break-word;
+        }
+
+        .options-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin: 25px 0 10px;
+        }
+
+        .option-btn {
+            background: #ec9f1c;
+            border: none;
+            color: #2b1504;
+            font-size: 1.5rem;
+            padding: 15px 15px;
+            border-radius: 50px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 6px 0 #a7581c, 0 0 0 3px #fdeaa9, 0 0 20px #ffae42;
+            transition: 0.05s linear;
+            border: 2px solid #ffc107;
+        }
+
+        .option-btn:active {
+            transform: translateY(5px);
+            box-shadow: 0 1px 0 #a7581c, 0 0 0 3px #ffe484, 0 0 25px #ffae42;
+        }
+
+        .victory-highlight {
+            color: #b6490e;
+            font-size: 2.2rem;
+            font-weight: 900;
+            text-align: center;
+            text-shadow: 3px 3px 0 #fbbf24;
+            background: #fef08a;
+            padding: 10px;
+            border-radius: 40px;
+            border: 4px solid #ca8a04;
+        }
+
+        #victoryCloseBtn {
+            background: #f39c12;
+            font-size: 2rem;
+            padding: 10px 40px;
+            margin-top: 15px;
+            border: 4px solid #b45309;
+        }
+    </style>
+</head>
+<body>
+<div class="game-container">
+    <div class="game-header">
+        <div class="game-title">DEAL's MAZE ESCAPE</div>
+    </div>
+    <div class="sub-credit">⚡ co-created with DEAL ⚡</div>
+    <div class="stats-panel">
+        <div class="timer-steps">
+            <span><i>⏱️</i> <span id="timerDisplay">00:00.0</span></span>
+            <span><i>👟</i> <span id="stepsDisplay">0</span></span>
+        </div>
+        <div class="keys-progress">
+            <span class="keys-label">🔑 KEYS</span>
+            <div class="key-icons" id="keyIconsContainer"></div>
+        </div>
+        <div class="action-buttons">
+            <button id="newMazeBtn">🌀 NEW GAME</button>
+            <button id="replayBtn">↻ TRY AGAIN!</button>
+        </div>
+    </div>
+    <div class="canvas-wrapper">
+        <canvas id="mazeCanvas" width="700" height="700"></canvas>
+    </div>
+</div>
+
+<!-- модалка вопроса -->
+<div class="modal" id="questionModal">
+    <div class="modal-card">
+        <h2>🏁 COMPARISON</h2>
+        <div class="question-text" id="questionDisplay">loading</div>
+        <div class="options-grid" id="optionsContainer"></div>
+    </div>
+</div>
+
+<!-- победа -->
+<div class="modal" id="victoryModal">
+    <div class="modal-card" style="text-align: center;">
+        <span style="font-size: 5rem; filter: drop-shadow(0 0 10px black);">🏁</span>
+        <div class="victory-highlight" id="victoryMessage">⭐ PERFECT ROUTE!</div>
+        <div style="font-size: 1.5rem; margin: 20px 0; background: #fdeaa9; padding: 15px; border-radius: 60px; border:4px solid #b45309; box-shadow: inset 0 -3px 0 #b4701e;">
+            <span id="victoryStats"></span>
+        </div>
+        <button class="option-btn" id="victoryCloseBtn">OK</button>
+    </div>
+</div>
+
+<script>
+// Весь скрипт остаётся без изменений (он не влияет на размеры)
+(function(){
+    // ==================== ВОПРОСЫ (50 штук) ====================
+    const QUESTION_DATA = [
+        ["Which is the comparative form of \"big\"?","big","bigger","biggest",2],
+        ["Which is the superlative form of \"small\"?","small","smaller","smallest",3],
+        ["Choose the correct sentence:","She is taller than me","She is tall than me","She is more tall than me",1],
+        ["What is the superlative of \"happy\"?","happyer","happier","happiest",3],
+        ["Which word is comparative?","fast","faster","fastest",2],
+        ["Complete: This book is ___ than that one.","interesting","more interesting","most interesting",2],
+        ["What is the comparative of \"bad\"?","badder","worse","worst",2],
+        ["Choose the superlative:","good","better","best",3],
+        ["Which is correct?","This is the most big house","This is the biggest house","This is the bigger house",2],
+        ["The elephant is ___ than the mouse.","big","bigger","biggest",2],
+        ["What is the superlative of \"hot\"?","hoter","hotter","hottest",3],
+        ["Choose the comparative form of \"nice\":","nice","nicer","nicest",2],
+        ["My brother is ___ than me.","old","older","oldest",2],
+        ["Which is the superlative of \"far\"?","farer","farther","farthest",3],
+        ["This is the ___ movie I have ever seen.","funny","funnier","funniest",3],
+        ["Choose the correct form:","She runs more fast than him","She runs faster than him","She runs fastest than him",2],
+        ["What is the comparative of \"good\"?","good","better","best",2],
+        ["Which sentence is correct?","This is the most easy test","This is the easiest test","This is the easier test",2],
+        ["The blue car is ___ than the red car.","expensive","more expensive","most expensive",2],
+        ["What is the superlative of \"little\"?","little","less","least",3],
+        ["Choose the comparative:","beautiful","more beautiful","most beautiful",2],
+        ["Which is the superlative of \"cold\"?","colder","coldest","cold",2],
+        ["My house is ___ than yours.","small","smaller","smallest",2],
+        ["This is the ___ day of my life!","happy","happier","happiest",3],
+        ["What is the comparative form of \"thin\"?","thin","thiner","thinner",3],
+        ["Choose the correct sentence:","He is the taller boy in class","He is the tallest boy in class","He is taller boy in class",2],
+        ["Which word is superlative?","fast","faster","fastest",3],
+        ["The weather is getting ___ every day.","cold","colder","coldest",2],
+        ["What is the superlative of \"busy\"?","busyer","busier","busiest",3],
+        ["Choose the comparative of \"late\":","late","later","latest",2],
+        ["Which is correct?","This cake is more good than that one","This cake is better than that one","This cake is gooder than that one",2],
+        ["The giraffe is ___ animal in the zoo.","tall","taller","tallest",3],
+        ["What is the comparative of \"easy\"?","easy","easier","easiest",2],
+        ["Choose the superlative form of \"bad\":","bad","worse","worst",3],
+        ["My dog is ___ than your cat.","friendly","friendlier","friendliest",2],
+        ["Which sentence uses the superlative correctly?","She is the more smart student","She is the smartest student","She is smarter student",2],
+        ["What is the comparative of \"heavy\"?","heavy","heavier","heaviest",2],
+        ["This is the ___ pizza in the world!","delicious","more delicious","most delicious",3],
+        ["Choose the correct form:","It is the most hot day","It is the hotter day","It is the hottest day",3],
+        ["Which is the comparative of \"many\"?","many","more","most",2],
+        ["What is the superlative of \"early\"?","early","earlier","earliest",3],
+        ["Choose the comparative:","slow","slower","slowest",2],
+        ["My sister is ___ than me at math.","good","better","best",2],
+        ["Which is correct?","He runs the most fast","He runs the faster","He runs the fastest",3],
+        ["What is the comparative of \"wide\"?","wide","wider","widest",2],
+        ["This is the ___ book I've ever read.","boring","more boring","most boring",3],
+        ["Choose the superlative of \"short\":","short","shorter","shortest",3],
+        ["The train is ___ than the car.","fast","faster","fastest",2],
+        ["What is the comparative of \"dangerous\"?","dangerous","more dangerous","most dangerous",2],
+        ["Which sentence is correct?","This is the most interesting story","This is the more interesting story","This is the interestinger story",1]
+    ];
+
+    const SIZE = 15;
+    const TOTAL_KEYS = 10;
+    const ENEMY_COUNT = 5;
+    const MOVE_ENEMY_CHANCE = 0.3;
+
+    let maze = Array(SIZE).fill().map(()=>Array(SIZE).fill(1));
+    let playerPos = {x:1, y:1};
+    let goalPos = {x:-1, y:-1};
+    let keys = [];
+    let enemies = [];
+    let keysCollected = 0;
+    let steps = 0;
+    let timerInterval = null;
+    let timerSeconds = 0;
+    let gameActive = true;
+    let phase = 'collect';
+    let questionLock = false;
+    let currentQuestionKeyIndex = -1;
+
+    const canvas = document.getElementById('mazeCanvas');
+    const ctx = canvas.getContext('2d');
+    const timerSpan = document.getElementById('timerDisplay');
+    const stepsSpan = document.getElementById('stepsDisplay');
+    const keyIconsDiv = document.getElementById('keyIconsContainer');
+    const modal = document.getElementById('questionModal');
+    const questionDisplay = document.getElementById('questionDisplay');
+    const optionsDiv = document.getElementById('optionsContainer');
+    const victoryModal = document.getElementById('victoryModal');
+    const victoryStatsSpan = document.getElementById('victoryStats');
+    const victoryMsgSpan = document.getElementById('victoryMessage');
+
+    function randomWalkableCell(excludePositions = []) {
+        let attempts = 0;
+        const excludeSet = new Set(excludePositions.map(p=>`${p.x},${p.y}`));
+        while (attempts < 5000) {
+            const x = Math.floor(Math.random() * SIZE);
+            const y = Math.floor(Math.random() * SIZE);
+            if (maze[y][x] === 0 && !excludeSet.has(`${x},${y}`) && !(playerPos.x===x && playerPos.y===y)) {
+                return {x, y};
+            }
+            attempts++;
+        }
+        return null;
+    }
+
+    function generateMaze() {
+        for (let y=0; y<SIZE; y++) for (let x=0; x<SIZE; x++) maze[y][x] = 1;
+        function carve(x, y) {
+            maze[y][x] = 0;
+            const dirs = [[0,-2],[2,0],[0,2],[-2,0]].sort(()=>Math.random()-0.5);
+            for (let [dx,dy] of dirs) {
+                let nx = x+dx, ny = y+dy;
+                if (nx>0 && nx<SIZE-1 && ny>0 && ny<SIZE-1 && maze[ny][nx]===1) {
+                    maze[y+dy/2][x+dx/2] = 0;
+                    carve(nx, ny);
+                }
+            }
+        }
+        carve(1,1);
+        for (let i=0; i<SIZE; i++) {
+            maze[0][i]=1; maze[SIZE-1][i]=1; maze[i][0]=1; maze[i][SIZE-1]=1;
+        }
+    }
+
+    function newGame() {
+        if (timerInterval) clearInterval(timerInterval);
+        timerSeconds = 0;
+        updateTimerDisplay();
+        steps = 0; stepsSpan.innerText = '0';
+        keysCollected = 0;
+        phase = 'collect';
+        gameActive = true;
+        questionLock = false;
+        modal.classList.remove('show');
+        victoryModal.classList.remove('show');
+
+        generateMaze();
+        playerPos = {x:1, y:1};
+
+        keys = [];
+        while (keys.length < TOTAL_KEYS) {
+            const cell = randomWalkableCell([...keys, playerPos]);
+            if (cell) keys.push(cell);
+        }
+
+        goalPos = {x:-1, y:-1};
+        enemies = [];
+
+        updateKeyIcons();
+        timerInterval = setInterval(() => { timerSeconds += 0.1; updateTimerDisplay(); }, 100);
+        drawMaze();
+    }
+
+    function spawnExitAndEnemies() {
+        if (phase !== 'exit') {
+            phase = 'exit';
+            const goalCandidate = randomWalkableCell([playerPos, ...keys]);
+            goalPos = goalCandidate || {x:3, y:3};
+
+            enemies = [];
+            while (enemies.length < ENEMY_COUNT) {
+                const e = randomWalkableCell([playerPos, goalPos, ...keys, ...enemies]);
+                if (e) enemies.push(e);
+            }
+            drawMaze();
+        }
+    }
+
+    function moveEnemies() {
+        if (phase !== 'exit') return;
+        let newEnemies = [];
+        for (let e of enemies) {
+            if (Math.random() < MOVE_ENEMY_CHANCE) {
+                const dirs = [[0,1],[1,0],[0,-1],[-1,0]].sort(()=>Math.random()-0.5);
+                for (let [dx,dy] of dirs) {
+                    let nx = e.x+dx, ny = e.y+dy;
+                    if (maze[ny] && maze[ny][nx]===0) {
+                        newEnemies.push({x:nx, y:ny});
+                        break;
+                    }
+                }
+            } else {
+                newEnemies.push({x:e.x, y:e.y});
+            }
+        }
+        enemies = newEnemies;
+        checkEnemyCollision();
+    }
+
+    function checkEnemyCollision() {
+        if (phase !== 'exit' || !gameActive) return;
+        for (let e of enemies) {
+            if (e.x === playerPos.x && e.y === playerPos.y) {
+                const newGoal = randomWalkableCell([playerPos, ...enemies, ...keys]);
+                if (newGoal) goalPos = newGoal;
+                drawMaze();
+                break;
+            }
+        }
+    }
+
+    function tryMove(dx, dy) {
+        if (!gameActive || modal.classList.contains('show') || victoryModal.classList.contains('show')) return;
+
+        let nx = playerPos.x + dx;
+        let ny = playerPos.y + dy;
+        if (maze[ny] && maze[ny][nx] === 0) {
+            playerPos.x = nx; playerPos.y = ny;
+            steps++; stepsSpan.innerText = steps;
+
+            if (phase === 'collect') {
+                const keyIndex = keys.findIndex(k => k.x === nx && k.y === ny);
+                if (keyIndex >= 0 && !questionLock) {
+                    questionLock = true;
+                    currentQuestionKeyIndex = keyIndex;
+                    showQuestionModal();
+                }
+            }
+
+            if (phase === 'exit' && goalPos.x === nx && goalPos.y === ny) {
+                finishVictory();
+            }
+
+            moveEnemies();
+            drawMaze();
+        }
+    }
+
+    function finishVictory() {
+        if (!gameActive) return;
+        gameActive = false;
+        if (timerInterval) clearInterval(timerInterval);
+        victoryStatsSpan.innerText = `👣 ${steps} steps  ⏱️ ${timerSpan.innerText}`;
+        victoryMsgSpan.innerHTML = '⭐ PERFECT ROUTE!';
+        victoryModal.classList.add('show');
+    }
+
+    function showQuestionModal() {
+        const qIndex = Math.floor(Math.random() * QUESTION_DATA.length);
+        const q = QUESTION_DATA[qIndex];
+        questionDisplay.innerText = q[0];
+        optionsDiv.innerHTML = '';
+        for (let i=1; i<=3; i++) {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerText = q[i];
+            btn.dataset.optIndex = i;
+            btn.onclick = () => handleAnswer(i, q[4]);
+            optionsDiv.appendChild(btn);
+        }
+        modal.classList.add('show');
+    }
+
+    function handleAnswer(selectedIdx, correctIdx) {
+        modal.classList.remove('show');
+        if (selectedIdx === correctIdx) {
+            if (currentQuestionKeyIndex >= 0 && keys[currentQuestionKeyIndex]) {
+                keys.splice(currentQuestionKeyIndex, 1);
+                keysCollected++;
+                updateKeyIcons();
+
+                if (keysCollected === TOTAL_KEYS) {
+                    spawnExitAndEnemies();
+                }
+            }
+        } else {
+            if (currentQuestionKeyIndex >= 0 && keys[currentQuestionKeyIndex]) {
+                const newPos = randomWalkableCell([playerPos, ...keys]);
+                if (newPos) keys[currentQuestionKeyIndex] = newPos;
+            }
+        }
+        currentQuestionKeyIndex = -1;
+        questionLock = false;
+        drawMaze();
+    }
+
+    function updateKeyIcons() {
+        let html = '';
+        for (let i=0; i<TOTAL_KEYS; i++) {
+            const collected = i < keysCollected ? 'collected' : '';
+            html += `<div class="key-icon ${collected}"></div>`;
+        }
+        keyIconsDiv.innerHTML = html;
+    }
+
+    function updateTimerDisplay() {
+        let totalSecs = Math.floor(timerSeconds);
+        let mins = Math.floor(totalSecs/60);
+        let secs = totalSecs % 60;
+        let deci = Math.floor((timerSeconds - totalSecs) * 10);
+        timerSpan.innerText = `${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}.${deci}`;
+    }
+
+    function drawMaze() {
+        ctx.clearRect(0,0,700,700);
+        const cellSize = 700 / SIZE;
+
+        for (let y=0; y<SIZE; y++) {
+            for (let x=0; x<SIZE; x++) {
+                if (maze[y][x] === 1) {
+                    let grad = ctx.createLinearGradient(x*cellSize, y*cellSize, x*cellSize+20, y*cellSize+20);
+                    grad.addColorStop(0, '#a5521a');
+                    grad.addColorStop(1, '#6d2f0b');
+                    ctx.fillStyle = grad;
+                    ctx.fillRect(x*cellSize, y*cellSize, cellSize, cellSize);
+                    ctx.fillStyle = '#8b451370';
+                    ctx.fillRect(x*cellSize+2, y*cellSize+2, cellSize-4, cellSize-4);
+                } else {
+                    let sand = ctx.createLinearGradient(x*cellSize, y*cellSize, x*cellSize+15, y*cellSize+15);
+                    sand.addColorStop(0, '#e0a54f');
+                    sand.addColorStop(1, '#b87b36');
+                    ctx.fillStyle = sand;
+                    ctx.fillRect(x*cellSize, y*cellSize, cellSize, cellSize);
+                    ctx.fillStyle = '#a5691e30';
+                    ctx.beginPath();
+                    ctx.arc(x*cellSize+8, y*cellSize+8, 3, 0, 2*Math.PI);
+                    ctx.fill();
+                }
+            }
+        }
+
+        ctx.shadowColor = '#fbbf24';
+        ctx.shadowBlur = 30;
+        keys.forEach(k => {
+            ctx.beginPath();
+            ctx.arc(k.x*cellSize+cellSize/2, k.y*cellSize+cellSize/2, cellSize*0.3, 0, 2*Math.PI);
+            ctx.fillStyle = '#ffaa00';
+            ctx.fill();
+            ctx.shadowBlur = 35;
+            ctx.beginPath();
+            ctx.arc(k.x*cellSize+cellSize/2, k.y*cellSize+cellSize/2, cellSize*0.24, 0, 2*Math.PI);
+            ctx.fillStyle = '#fbbf24';
+            ctx.fill();
+            ctx.shadowBlur = 20;
+            ctx.beginPath();
+            ctx.arc(k.x*cellSize+cellSize/2-4, k.y*cellSize+cellSize/2-4, cellSize*0.1, 0, 2*Math.PI);
+            ctx.fillStyle = '#fff7b0';
+            ctx.fill();
+        });
+
+        ctx.shadowColor = '#ef4444';
+        ctx.shadowBlur = 30;
+        enemies.forEach(e => {
+            ctx.beginPath();
+            ctx.arc(e.x*cellSize+cellSize/2, e.y*cellSize+cellSize/2, cellSize*0.32, 0, 2*Math.PI);
+            ctx.fillStyle = '#cc0000';
+            ctx.fill();
+            ctx.shadowBlur = 35;
+            ctx.beginPath();
+            ctx.arc(e.x*cellSize+cellSize/2, e.y*cellSize+cellSize/2, cellSize*0.26, 0, 2*Math.PI);
+            ctx.fillStyle = '#ef4444';
+            ctx.fill();
+            ctx.shadowBlur = 10;
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(e.x*cellSize+cellSize/2-6, e.y*cellSize+cellSize/2-5, 4, 0, 2*Math.PI);
+            ctx.fill();
+            ctx.fillStyle = '#000000';
+            ctx.beginPath();
+            ctx.arc(e.x*cellSize+cellSize/2-8, e.y*cellSize+cellSize/2-7, 2, 0, 2*Math.PI);
+            ctx.fill();
+        });
+
+        if (goalPos.x >= 0) {
+            ctx.shadowColor = '#10b981';
+            ctx.shadowBlur = 35;
+            ctx.beginPath();
+            ctx.arc(goalPos.x*cellSize+cellSize/2, goalPos.y*cellSize+cellSize/2, cellSize*0.32, 0, 2*Math.PI);
+            ctx.fillStyle = '#059669';
+            ctx.fill();
+            ctx.shadowBlur = 40;
+            ctx.beginPath();
+            ctx.arc(goalPos.x*cellSize+cellSize/2, goalPos.y*cellSize+cellSize/2, cellSize*0.26, 0, 2*Math.PI);
+            ctx.fillStyle = '#34d399';
+            ctx.fill();
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 24px sans-serif';
+            ctx.fillText('🏁', goalPos.x*cellSize+cellSize/2-15, goalPos.y*cellSize+cellSize/2+10);
+        }
+
+        ctx.shadowColor = '#3b82f6';
+        ctx.shadowBlur = 45;
+        ctx.beginPath();
+        ctx.arc(playerPos.x*cellSize+cellSize/2, playerPos.y*cellSize+cellSize/2, cellSize*0.38, 0, 2*Math.PI);
+        ctx.fillStyle = '#1e3a8a';
+        ctx.fill();
+        
+        ctx.shadowBlur = 50;
+        ctx.beginPath();
+        ctx.arc(playerPos.x*cellSize+cellSize/2, playerPos.y*cellSize+cellSize/2, cellSize*0.32, 0, 2*Math.PI);
+        ctx.fillStyle = '#3b82f6';
+        ctx.fill();
+        
+        ctx.shadowBlur = 40;
+        ctx.beginPath();
+        ctx.arc(playerPos.x*cellSize+cellSize/2-4, playerPos.y*cellSize+cellSize/2-4, cellSize*0.12, 0, 2*Math.PI);
+        ctx.fillStyle = '#93c5fd';
+        ctx.fill();
+
+        ctx.shadowBlur = 0;
+    }
+
+    window.addEventListener('keydown', (e) => {
+        const key = e.key;
+        if (key === 'ArrowUp' || key === 'w' || key === 'W') tryMove(0, -1);
+        else if (key === 'ArrowDown' || key === 's' || key === 'S') tryMove(0, 1);
+        else if (key === 'ArrowLeft' || key === 'a' || key === 'A') tryMove(-1, 0);
+        else if (key === 'ArrowRight' || key === 'd' || key === 'D') tryMove(1, 0);
+        e.preventDefault();
+    });
+
+    document.getElementById('newMazeBtn').addEventListener('click', newGame);
+    document.getElementById('replayBtn').addEventListener('click', newGame);
+    document.getElementById('victoryCloseBtn').addEventListener('click', ()=>{
+        victoryModal.classList.remove('show');
+    });
+
+    newGame();
+})();
+</script>
+</body>
+</html>

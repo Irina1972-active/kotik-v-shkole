@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Котик в классе</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', cursive, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: linear-gradient(180deg, #ffeaa7 0%, #fdcb6e 100%);
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            box-shadow: 5px 0 20px rgba(0,0,0,0.2);
+            border-right: 4px solid #e17055;
+        }
+
+        .sidebar h2 {
+            text-align: center;
+            color: #d63031;
+            font-size: 24px;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 0px #fff;
+        }
+
+        .menu-btn {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+        }
+
+        .menu-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 rgba(0,0,0,0.2);
+        }
+
+        .menu-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            filter: grayscale(0.8);
+        }
+
+        .btn-board {
+            background: linear-gradient(135deg, #55efc4 0%, #00b894 100%);
+            color: #fff;
+        }
+
+        .btn-board:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 0 rgba(0,0,0,0.2);
+        }
+
+        .btn-tablet {
+            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+            color: #fff;
+        }
+
+        .btn-tablet:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 0 rgba(0,0,0,0.2);
+        }
+
+        .btn-phone {
+            background: linear-gradient(135deg, #fd79a8 0%, #e84393 100%);
+            color: #fff;
+        }
+
+        .btn-phone:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 0 rgba(0,0,0,0.2);
+        }
+
+        .btn-exit {
+            background: linear-gradient(135deg, #ff7675 0%, #d63031 100%);
+            color: #fff;
+            margin-top: auto;
+        }
+
+        .btn-exit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 0 rgba(0,0,0,0.2);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .main-area {
+            flex: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .classroom-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('https://img.freepik.com/free-vector/empty-classroom-interior-with-chalkboard_1308-61229.jpg?semt=ais_rp_50_assets&w=740&q=80');
+            background-size: cover;
+            background-position: center;
+            transition: all 0.5s ease;
+        }
+
+        .classroom-bg.board-hover {
+            background-image: url('images/classroom.png');
+        }
+        .classroom-bg.tablet-hover {
+            background-image: url('https://img.freepik.com/premium-vector/cute-cartoon-tablet-mobile-gadget-vector-design-illustration_773815-208.jpg');
+        }
+
+        .cat-container {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .cat-image {
+            width: 300px;
+            height: auto;
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3));
+        }
+
+        .cat-message {
+            margin-top: 20px;
+            background: rgba(255,255,255,0.95);
+            padding: 15px 25px;
+            border-radius: 20px;
+            font-size: 18px;
+            color: #2d3436;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            max-width: 400px;
+            position: relative;
+        }
+
+        .cat-message::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 10px 10px 0;
+            border-style: solid;
+            border-color: rgba(255,255,255,0.95) transparent transparent transparent;
+        }
+
+        /* Модальные окна */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 900px;
+            width: 95%;
+            max-height: 90vh;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            position: relative;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid #dfe6e9;
+        }
+
+        .modal-title {
+            font-size: 24px;
+            color: #2d3436;
+        }
+
+        .close-btn {
+            background: #ff7675;
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .close-btn:hover {
+            background: #d63031;
+            transform: rotate(90deg);
+        }
+
+        .modal-body {
+            overflow-y: auto;
+            max-height: calc(90vh - 140px);
+            margin-bottom: 20px;
+        }
+
+        .game-iframe {
+            width: 100%;
+            height: 700px;
+            border: 3px solid #dfe6e9;
+            border-radius: 10px;
+            background: #fff;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,184,148,0.4);
+        }
+
+        .btn-fail {
+            background: linear-gradient(135deg, #e17055 0%, #d63031 100%);
+            color: white;
+        }
+
+        .btn-fail:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(214,48,49,0.4);
+        }
+
+        /* Мини-игра на телефоне (кликер) */
+        .phone-game {
+            text-align: center;
+            padding: 20px;
+        }
+        .phone-game h3 {
+            color: #e84393;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+        .clicker-btn {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #fd79a8 0%, #e84393 100%);
+            border: none;
+            color: white;
+            font-size: 48px;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(232,67,147,0.4);
+            transition: all 0.1s;
+            margin: 20px;
+        }
+        .clicker-btn:active {
+            transform: scale(0.95);
+            box-shadow: 0 5px 15px rgba(232,67,147,0.4);
+        }
+        .click-counter {
+            font-size: 24px;
+            color: #2d3436;
+            margin-top: 20px;
+        }
+
+        /* Финальное модальное окно */
+        .ending-modal .modal-content {
+            text-align: center;
+            max-width: 500px;
+        }
+
+        .ending-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+
+        .ending-title {
+            font-size: 32px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .ending-text {
+            font-size: 18px;
+            color: #636e72;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+
+        .ending-bad { color: #d63031; }
+        .ending-neutral { color: #fdcb6e; }
+        .ending-good { color: #00b894; }
+
+        .restart-btn {
+            background: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%);
+            color: white;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 30px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .restart-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(108,92,231,0.4);
+        }
+
+        .progress-indicator {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.95);
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            z-index: 50;
+        }
+
+        .progress-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        .progress-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #b2bec3;
+        }
+
+        .progress-dot.completed {
+            background: #00b894;
+            box-shadow: 0 0 10px #00b894;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar { width: 200px; padding: 20px 15px; }
+            .cat-image { width: 200px; }
+            .modal-content { width: 95%; padding: 20px; }
+            .game-iframe { height: 500px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>🐱 Меню</h2>
+        <button class="menu-btn btn-board" id="btnBoard" onmouseenter="hoverBoard()" onmouseleave="resetBg()" onclick="openBoard()">📋 Доска</button>
+        <button class="menu-btn btn-tablet" id="btnTablet" onmouseenter="hoverTablet()" onmouseleave="resetBg()" onclick="openTablet()">📱 Планшет</button>
+        <button class="menu-btn btn-phone" id="btnPhone" onclick="openPhone()">☎️ Телефон</button>
+        <button class="menu-btn btn-exit" onclick="checkExit()">🚪 Выйти</button>
+    </div>
+
+    <div class="main-area">
+        <div class="classroom-bg" id="classroomBg"></div>
+        <div class="progress-indicator">
+            <div class="progress-item"><div class="progress-dot" id="dotBoard"></div><span>Доска</span></div>
+            <div class="progress-item"><div class="progress-dot" id="dotTablet"></div><span>Планшет</span></div>
+            <div class="progress-item"><div class="progress-dot" id="dotPhone"></div><span>Телефон</span></div>
+        </div>
+        <div class="cat-container">
+            <img src="https://img.freepik.com/premium-vector/cute-cat-studying-cartoon-illustration_274619-818.jpg" alt="Котик" class="cat-image" id="catImage">
+            <div class="cat-message" id="catMessage">Привет! Я остался после уроков... Давай поучимся вместе? 📚</div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для Доски -->
+    <div class="modal-overlay" id="boardModal">
+        <div class="modal-content">
+            <div class="modal-header"><h3 class="modal-title">📋 Задания на доске</h3><button class="close-btn" onclick="closeModal('boardModal')">×</button></div>
+            <div class="modal-body"><iframe class="game-iframe" id="boardFrame" src="about:blank"></iframe></div>
+            <div class="modal-actions">
+                <button class="action-btn btn-success" onclick="completeBoard(true)">✅ Пройти успешно</button>
+                <button class="action-btn btn-fail" onclick="completeBoard(false)">❌ Провалить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для Планшета -->
+    <div class="modal-overlay" id="tabletModal">
+        <div class="modal-content">
+            <div class="modal-header"><h3 class="modal-title">📱 Задания на планшете</h3><button class="close-btn" onclick="closeModal('tabletModal')">×</button></div>
+            <div class="modal-body"><iframe class="game-iframe" id="tabletFrame" src="about:blank"></iframe></div>
+            <div class="modal-actions">
+                <button class="action-btn btn-success" onclick="completeTablet(true)">✅ Пройти успешно</button>
+                <button class="action-btn btn-fail" onclick="completeTablet(false)">❌ Провалить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для Телефона (мини-игра кликер) -->
+    <div class="modal-overlay" id="phoneModal">
+        <div class="modal-content">
+            <div class="modal-header"><h3 class="modal-title">☎️ Мини-игра на телефоне</h3><button class="close-btn" onclick="closePhone()">×</button></div>
+            <div class="modal-body">
+                <div class="phone-game">
+                    <h3>Нажми на кнопку 10 раз!</h3>
+                    <button class="clicker-btn" onclick="phoneClick()">🐾</button>
+                    <div class="click-counter">Нажатий: <span id="clickCount">0</span>/10</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Финальное модальное окно -->
+    <div class="modal-overlay ending-modal" id="endingModal">
+        <div class="modal-content">
+            <div class="ending-icon" id="endingIcon">🎭</div>
+            <h2 class="ending-title" id="endingTitle">Заголовок</h2>
+            <p class="ending-text" id="endingText">Текст концовки</p>
+            <button class="restart-btn" onclick="restartGame()">🔄 Играть снова</button>
+        </div>
+    </div>
+
+    <script>
+        // Состояние игры
+        let boardSuccess = false;
+        let tabletSuccess = false;
+        let phonePlayed = false; // телефон не влияет на хорошую концовку, но отмечается
+        let phoneClicks = 0;
+
+        const catMessage = document.getElementById('catMessage');
+        const catImage = document.getElementById('catImage');
+        const classroomBg = document.getElementById('classroomBg');
+
+        // === Наведение мыши ===
+        function hoverBoard() {
+            classroomBg.classList.add('board-hover');
+            catMessage.textContent = "Доска! Там математические задачки... 📐";
+        }
+        function hoverTablet() {
+            classroomBg.classList.add('tablet-hover');
+            catMessage.textContent = "Планшет! Интерактивные задания... 💻";
+        }
+        function resetBg() {
+            classroomBg.classList.remove('board-hover', 'tablet-hover');
+            updateCatMessage();
+        }
+
+        function updateCatMessage() {
+            if (boardSuccess && tabletSuccess) {
+                catMessage.textContent = "Ура! Я всё сделал! Можно идти домой! 🎉";
+            } else if (boardSuccess || tabletSuccess) {
+                catMessage.textContent = "Хорошо поработал! Но можно ещё лучше! 💪";
+            } else if (phonePlayed) {
+                catMessage.textContent = "Было весело, но пора учиться... 😅";
+            } else {
+                catMessage.textContent = "Привет! Я остался после уроков... Давай поучимся вместе? 📚";
+            }
+        }
+
+        // === Доска ===
+        function openBoard() {
+            if (boardSuccess) return;
+            document.getElementById('boardModal').classList.add('active');
+            document.getElementById('boardFrame').src = 'games/MAZE.html';
+            catMessage.textContent = "Решаю задачки на доске... 🤔";
+        }
+        function completeBoard(success) {
+            closeModal('boardModal');
+            if (success) {
+                boardSuccess = true;
+                document.getElementById('btnBoard').disabled = true;
+                document.getElementById('dotBoard').classList.add('completed');
+                catMessage.textContent = "Отлично! Доска пройдена! ✅";
+            } else {
+                catMessage.textContent = "Ой, не получилось... Попробую ещё раз! 😿";
+            }
+            updateCatMessage();
+        }
+
+        // === Планшет ===
+        function openTablet() {
+            if (tabletSuccess) return;
+            document.getElementById('tabletModal').classList.add('active');
+            document.getElementById('tabletFrame').src = 'games/Memory.html';
+            catMessage.textContent = "Работаю на планшете... 💻";
+        }
+        function completeTablet(success) {
+            closeModal('tabletModal');
+            if (success) {
+                tabletSuccess = true;
+                document.getElementById('btnTablet').disabled = true;
+                document.getElementById('dotTablet').classList.add('completed');
+                catMessage.textContent = "Супер! Планшет освоен! ✅";
+            } else {
+                catMessage.textContent = "Сложно... Но я не сдамся! 😤";
+            }
+            updateCatMessage();
+        }
+
+        // === Телефон (кликер) ===
+        function openPhone() {
+            document.getElementById('phoneModal').classList.add('active');
+            phoneClicks = 0;
+            document.getElementById('clickCount').textContent = '0';
+            catMessage.textContent = "Играю на телефоне... 📱";
+        }
+        function phoneClick() {
+            phoneClicks++;
+            document.getElementById('clickCount').textContent = phoneClicks;
+            if (phoneClicks >= 10) {
+                phonePlayed = true;
+                document.getElementById('dotPhone').classList.add('completed');
+                setTimeout(() => {
+                    closePhone();
+                    catMessage.textContent = "Поиграл и хватит! Пора за работу! 😼";
+                }, 500);
+            }
+        }
+        function closePhone() {
+            closeModal('phoneModal');
+            updateCatMessage();
+        }
+
+        // === Выход и концовки ===
+        function checkExit() {
+            let icon, title, titleClass, text;
+            // Концовка зависит только от доски и планшета
+            if (!boardSuccess && !tabletSuccess) {
+                icon = '😿';
+                title = 'Плохая концовка';
+                titleClass = 'ending-bad';
+                text = 'Учительница ругает: "Ты недостаточно поработал! Зачем ты просто сидел в классе? Нужно было учиться, а не бездельничать!" Котик уходит домой с плохим настроением...';
+            } else if ((boardSuccess && !tabletSuccess) || (!boardSuccess && tabletSuccess)) {
+                icon = '😐';
+                title = 'Нейтральная концовка';
+                titleClass = 'ending-neutral';
+                text = 'Учительница говорит: "Неплохо, но нужно усерднее учиться! Ты сделал часть заданий, но на этом нельзя останавливаться. В следующий раз постарайся лучше!"';
+            } else {
+                icon = '😺';
+                title = 'Хорошая концовка!';
+                titleClass = 'ending-good';
+                text = 'Учительница хвалит котика: "Молодец! Ты отлично поработал сегодня! Все задания выполнены на отлично! Можешь идти домой с чистой совестью!" Котик горд собой!';
+            }
+            document.getElementById('endingIcon').textContent = icon;
+            document.getElementById('endingTitle').textContent = title;
+            document.getElementById('endingTitle').className = 'ending-title ' + titleClass;
+            document.getElementById('endingText').textContent = text;
+            document.getElementById('endingModal').classList.add('active');
+        }
+
+        // === Вспомогательные функции ===
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+            if (modalId === 'boardModal') {
+                document.getElementById('boardFrame').src = 'about:blank';
+            } else if (modalId === 'tabletModal') {
+                document.getElementById('tabletFrame').src = 'about:blank';
+            }
+            // phoneModal не использует iframe, очистка не нужна
+        }
+
+        function restartGame() {
+            boardSuccess = false;
+            tabletSuccess = false;
+            phonePlayed = false;
+            phoneClicks = 0;
+
+            document.getElementById('btnBoard').disabled = false;
+            document.getElementById('btnTablet').disabled = false;
+            document.querySelectorAll('.progress-dot').forEach(dot => dot.classList.remove('completed'));
+
+            document.getElementById('endingModal').classList.remove('active');
+            catMessage.textContent = "Начинаем заново! 📚";
+            setTimeout(updateCatMessage, 2000);
+        }
+
+        // Закрытие модалки при клике на фон
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', function(e) {
+                if (e.target === this && this.id !== 'endingModal') {
+                    this.classList.remove('active');
+                    if (this.id === 'phoneModal') updateCatMessage();
+                }
+            });
+        });
+
+        // Инициализация
+        updateCatMessage();
+    </script>
+</body>
+</html>
